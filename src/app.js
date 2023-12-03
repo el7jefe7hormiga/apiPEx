@@ -12,8 +12,8 @@ app.use(morgan("dev"));
 app.use(express.json());
 
 // enable CORS
-app.use(function(req, res, next) {
-  res.header("Access-Control-Allow-Origin", "*");
+app.use(function (req, res, next) {
+  res.header("Access-Control-Allow-Origin", "https://bitacora-plex.netlify.app");
   res.header("Access-Control-Allow-Methods", "GET,PUT,PATCH,POST,DELETE");
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
   next();
