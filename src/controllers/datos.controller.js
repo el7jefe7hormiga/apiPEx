@@ -20,7 +20,7 @@ export const getAbonados = async (req, res) => {
     const [rows] = await pool.query("SELECT * FROM datos ORDER BY createdAt");
     res.json(rows);
   } catch (error) {
-    return res.status(500).json({ message: "Algo salió mal :(" });
+    return res.status(500).json({ error: error, message: "Algo salió mal :(" });
   }
 };
 
@@ -32,12 +32,12 @@ export const getAbonado = async (req, res) => {
     ]);
 
     if (rows.length <= 0) {
-      return res.status(404).json({ message: "Abonado no encontrado!" });
+      return res.status(404).json({ error: error, message: "Abonado no encontrado!" });
     }
 
     res.json(rows[0]);
   } catch (error) {
-    return res.status(500).json({ message: "Algo salió mal :(" });
+    return res.status(500).json({ error: error, message: "Algo salió mal :(" });
   }
 };
 
@@ -47,12 +47,12 @@ export const deleteAbonado = async (req, res) => {
     const [rows] = await pool.query("DELETE FROM datos WHERE telefono = ?", [telefono]);
 
     if (rows.affectedRows <= 0) {
-      return res.status(404).json({ message: "Abonado no encontrado!" });
+      return res.status(404).json({ error: error, message: "Abonado no encontrado!" });
     }
 
     res.sendStatus(204);
   } catch (error) {
-    return res.status(500).json({ message: "Algo salió mal :(" });
+    return res.status(500).json({ error: error, message: "Algo salió mal :(" });
   }
 };
 
@@ -66,7 +66,7 @@ export const createAbonado = async (req, res) => {
     );
     res.status(201).json({ telefono, nombre, direccion, gps, datos_tecnicos, memo, quien, referencias, createdAt });
   } catch (error) {
-    return res.status(500).json({ message: "Algo salió mal :(" });
+    return res.status(500).json({ error: error, message: "Algo salió mal :(" });
   }
 };
 
@@ -84,7 +84,7 @@ export const updateAbonado = async (req, res) => {
     console.log(result);
 
     if (result.affectedRows === 0)
-      return res.status(404).json({ message: "Abonado no encontrado!" });
+      return res.status(404).json({ error: error, message: "Abonado no encontrado!" });
 
     const [rows] = await pool.query("SELECT * FROM datos WHERE telefono = ?", [
       telefono,
@@ -93,6 +93,6 @@ export const updateAbonado = async (req, res) => {
     res.json(rows[0]);
 
   } catch (error) {
-    return res.status(500).json({ message: "Algo salió mal :(" });
+    return res.status(500).json({ error: error, message: "Algo salió mal :(" });
   }
 };
