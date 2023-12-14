@@ -4,3 +4,4 @@ http
 tmp
 img
 .env
+env.js

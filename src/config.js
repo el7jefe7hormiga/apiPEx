@@ -1,12 +1,13 @@
 import { config } from "dotenv";
+import { LOC_DB_DATABASE, LOC_DB_HOST, LOC_DB_USER, LOC_DB_PASSWORD } from "./env.js";
 config();
 
 export const PORT = process.env.PORT || 2553;
 export const HOST = process.env.HOST || 'localhost';
 
-export const DB_DATABASE = process.env.DB_DATABASE || "plantaexterna";
-export const DB_HOST = process.env.DB_HOST || "aws.connect.psdb.cloud";
-export const DB_USER = process.env.DB_USER || "8cn9i2kc3tff0fps6cqt";
-export const DB_PASSWORD = process.env.DB_PASSWORD || "pscale_pw_Yk69eq2HHy8eKZXAwk61cLXD664glmeuvKrrw5WraCl";
+export const DB_DATABASE = process.env.DB_DATABASE || LOC_DB_DATABASE;
+export const DB_HOST = process.env.DB_HOST || LOC_DB_HOST;
+export const DB_USER = process.env.DB_USER || LOC_DB_USER;
+export const DB_PASSWORD = process.env.DB_PASSWORD || LOC_DB_PASSWORD;
 export const DB_PORT = process.env.DB_PORT || 3306;
 
