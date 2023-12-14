@@ -5,6 +5,7 @@ import {
   getAbonado,
   getAbonados,
   updateAbonado,
+  getCercanos,
 } from "../controllers/datos.controller.js";
 
 const router = Router();
@@ -21,6 +22,10 @@ router.delete("/abonado/:telefono", deleteAbonado);
 // INSERT An Abonado
 router.post("/abonado", createAbonado);
 
+// UPDATE AN Abonado
 router.patch("/abonado/:telefono", updateAbonado);
+
+// GET telefonos cercanos
+router.get("/abonado/cercanos/:telefono", getCercanos)
 
 export default router;

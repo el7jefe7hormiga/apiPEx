@@ -1,16 +1,19 @@
 import { pool } from "../db.js";
 
-function formatDate(date = new Date()) {
-  const year = date.toLocaleString('default', { year: 'numeric' });
-  const month = date.toLocaleString('default', { month: '2-digit' });
-  const day = date.toLocaleString('default', { day: '2-digit' });
+function formatDate(fechaLocalCliente = new Date()) {
 
-  const hours = date.toLocaleTimeString('default', { hour: '2-digit' });
-  const mins = date.toLocaleTimeString('default', { minute: '2-digit' });
-  const secs = date.toLocaleTimeString('default', { second: '2-digit' });
+  var año = fechaLocalCliente.getFullYear();
+  var mes = ('0' + (fechaLocalCliente.getMonth() + 1)).slice(-2); // Se agrega 1 porque los meses son indexados desde 0
+  var dia = ('0' + fechaLocalCliente.getDate()).slice(-2);
+  var horas = ('0' + fechaLocalCliente.getHours()).slice(-2);
+  var minutos = ('0' + fechaLocalCliente.getMinutes()).slice(-2);
+  var segundos = ('0' + fechaLocalCliente.getSeconds()).slice(-2);
 
-  const fecha = [year, month, day].join('-') + ' ' + [hours, mins, secs].join(':')
-  return fecha;
+  var fechaFormateada = año + '-' + mes + '-' + dia + ' ' + horas + ':' + minutos + ':' + segundos;
+
+  console.log("FECHA DE ACTUALIZACION:", fechaLocalCliente);
+  console.log('FECHA FORMATEADA:', fechaFormateada);
+  return fechaFormateada;
 }
 
 
@@ -64,7 +67,8 @@ export const createAbonado = async (req, res) => {
       "INSERT INTO datos (telefono, nombre, direccion, gps, datos_tecnicos, memo, quien, referencias, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       [telefono, nombre, direccion, gps, datos_tecnicos, memo, quien, referencias, fecha, fecha]
     );
-    res.status(201).json({ telefono, nombre, direccion, gps, datos_tecnicos, memo, quien, referencias, createdAt });
+    //res.status(201).json({ telefono, nombre, direccion, gps, datos_tecnicos, memo, quien, referencias, createdAt });
+    res.status(201).json(rows)
   } catch (error) {
     return res.status(500).json({ error: error, message: "Algo salió mal :(" });
   }
@@ -94,5 +98,58 @@ export const updateAbonado = async (req, res) => {
 
   } catch (error) {
     return res.status(500).json({ error: error, message: "Algo salió mal :(" });
+  }
+};
+
+export const getCercanos = async (req, res) => {
+  try {
+    const { telefono } = req.params;
+    const [rows] = await pool.query("SELECT gps FROM datos WHERE telefono = ?", [
+      telefono,
+    ]);
+
+    if (rows.length <= 0) {
+      return res.status(404).json({ error: error, message: "Abonado no encontrado!" });
+    }
+
+    // tengo las coordenadas del telefono
+    const gps = rows[0].gps;
+
+    // si está en blanco el campo ?
+    if (gps == "") {
+      return res.status(404).json({ message: `Cliente ${telefono} no tiene registradas sus coordenadas GPS.` })
+    }
+
+    const userLatitude = gps.substring(0, gps.indexOf(","))
+    const userLongitude = gps.substring(gps.indexOf(",") + 1)
+    const distanciaMaxima = 100 // distancia max entre los puntos, en metros
+    console.log('GPS', 'LATITUD', 'LONGITUD')
+    console.log(gps, userLatitude, userLongitude)
+
+    const sqlQuery = `
+      SELECT 
+          *, 
+          ROUND(6371000 * ACOS(
+          COS(RADIANS(${userLatitude})) * COS(RADIANS(SUBSTRING_INDEX(gps, ',', 1))) * COS(RADIANS(SUBSTRING_INDEX(gps, ',', -1)) - RADIANS(${userLongitude})) +
+          SIN(RADIANS(${userLatitude})) * SIN(RADIANS(SUBSTRING_INDEX(gps, ',', 1)))
+          ), 2) AS distancia
+      FROM datos
+      WHERE 
+        6371000 * ACOS(
+          COS(RADIANS(${userLatitude})) * COS(RADIANS(SUBSTRING_INDEX(gps, ',', 1))) * COS(RADIANS(SUBSTRING_INDEX(gps, ',', -1)) - RADIANS(${userLongitude})) +
+          SIN(RADIANS(${userLatitude})) * SIN(RADIANS(SUBSTRING_INDEX(gps, ',', 1)))
+        ) <= ${distanciaMaxima};
+    `;
+    console.log(sqlQuery)
+
+    const [cercanos] = await pool.query(sqlQuery);
+    if (cercanos.length <= 0) {
+      return res.status(404).json({ error: error, message: "No hay clientes cercanos al " + telefono });
+    }
+
+    res.json(cercanos);
+
+  } catch (error) {
+    return res.status(500).json({ error: error, message: "Algo salió mal :( al buscar telefonos cercanos" });
   }
 };
