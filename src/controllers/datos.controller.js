@@ -103,44 +103,69 @@ export const updateAbonado = async (req, res) => {
 
 export const getCercanos = async (req, res) => {
   try {
-    const { telefono } = req.params;
-    const [rows] = await pool.query("SELECT gps FROM datos WHERE telefono = ?", [
-      telefono,
-    ]);
+    var { telefono, latitud, longitud, maxDistancia } = req.params;
 
-    if (rows.length <= 0) {
-      return res.status(404).json({ error: error, message: "Abonado no encontrado!" });
+    // si no envío las coordenadas, buscalas en la BD con el telefono
+    if (!latitud && !longitud) {
+      const [rows] = await pool.query("SELECT gps FROM datos WHERE telefono = ?", [telefono]);
+
+      if (rows.length <= 0) {
+        return res.status(404).json({ error: error, message: "Abonado no encontrado!" });
+      }
+      // tengo las coordenadas del telefono
+      const gps = rows[0].gps;
+      // si está en blanco el campo ?
+      if (gps == "") {
+        return res.status(404).json({ message: `Cliente ${telefono} no tiene registradas sus coordenadas GPS.` })
+      }
+      latitud = gps.substring(0, gps.indexOf(",")).replace(" ", "",)
+      longitud = gps.substring(gps.indexOf(",") + 1).replace(" ", "")
     }
 
-    // tengo las coordenadas del telefono
-    const gps = rows[0].gps;
+    const distanciaMaxima = (maxDistancia !== undefined) ? maxDistancia : 300  // distancia max entre los puntos, en metros
+    console.log(telefono, latitud, longitud, distanciaMaxima)
 
-    // si está en blanco el campo ?
-    if (gps == "") {
-      return res.status(404).json({ message: `Cliente ${telefono} no tiene registradas sus coordenadas GPS.` })
-    }
-
-    const userLatitude = gps.substring(0, gps.indexOf(","))
-    const userLongitude = gps.substring(gps.indexOf(",") + 1)
-    const distanciaMaxima = 100 // distancia max entre los puntos, en metros
-    console.log('GPS', 'LATITUD', 'LONGITUD')
-    console.log(gps, userLatitude, userLongitude)
-
-    const sqlQuery = `
-      SELECT 
+    /*
+    SELECT 
           *, 
           ROUND(6371000 * ACOS(
-          COS(RADIANS(${userLatitude})) * COS(RADIANS(SUBSTRING_INDEX(gps, ',', 1))) * COS(RADIANS(SUBSTRING_INDEX(gps, ',', -1)) - RADIANS(${userLongitude})) +
-          SIN(RADIANS(${userLatitude})) * SIN(RADIANS(SUBSTRING_INDEX(gps, ',', 1)))
+          COS(RADIANS(${latitud})) * COS(RADIANS(SUBSTRING_INDEX(gps, ',', 1))) * COS(RADIANS(SUBSTRING_INDEX(gps, ',', -1)) - RADIANS(${longitud})) +
+          SIN(RADIANS(${latitud})) * SIN(RADIANS(SUBSTRING_INDEX(gps, ',', 1)))
           ), 2) AS distancia
       FROM datos
       WHERE 
         6371000 * ACOS(
-          COS(RADIANS(${userLatitude})) * COS(RADIANS(SUBSTRING_INDEX(gps, ',', 1))) * COS(RADIANS(SUBSTRING_INDEX(gps, ',', -1)) - RADIANS(${userLongitude})) +
-          SIN(RADIANS(${userLatitude})) * SIN(RADIANS(SUBSTRING_INDEX(gps, ',', 1)))
-        ) <= ${distanciaMaxima};
+          COS(RADIANS(${latitud})) * COS(RADIANS(SUBSTRING_INDEX(gps, ',', 1))) * COS(RADIANS(SUBSTRING_INDEX(gps, ',', -1)) - RADIANS(${longitud})) +
+          SIN(RADIANS(${latitud})) * SIN(RADIANS(SUBSTRING_INDEX(gps, ',', 1)))
+        ) <= ${distanciaMaxima} ;
+    */
+
+    const sqlQuery = `
+          SELECT *
+          FROM (
+            SELECT *,
+              ROUND(DEGREES(ATAN2(
+                  SIN(RADIANS(longitud - ${longitud})) * COS(RADIANS(${latitud})),
+                  COS(RADIANS(SUBSTRING_INDEX(gps, ',', 1))) * SIN(RADIANS(${latitud})) -
+                  SIN(RADIANS(SUBSTRING_INDEX(gps, ',', 1))) * COS(RADIANS(${latitud})) *
+                  COS(RADIANS(longitud - ${longitud}))
+              )),3) AS rumbo
+            FROM (
+              SELECT 
+                *, 
+                SUBSTRING_INDEX(gps, ',', 1) as latitud,
+                SUBSTRING_INDEX(gps, ',', -1) as longitud,
+                (ROUND(6371000 * ACOS(
+                COS(RADIANS(${latitud})) * COS(RADIANS(SUBSTRING_INDEX(gps, ',', 1))) * COS(RADIANS(SUBSTRING_INDEX(gps, ',', -1)) - RADIANS(${longitud})) +
+                SIN(RADIANS(${latitud})) * SIN(RADIANS(SUBSTRING_INDEX(gps, ',', 1)))
+                    ), 0)) AS distancia
+                FROM datos
+              ) AS subconsulta
+            ) AS consulta
+          WHERE distancia <= ${distanciaMaxima} 
+          ORDER BY distancia;
     `;
-    console.log(sqlQuery)
+    //console.log(sqlQuery)
 
     const [cercanos] = await pool.query(sqlQuery);
     if (cercanos.length <= 0) {

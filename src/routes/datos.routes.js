@@ -27,5 +27,7 @@ router.patch("/abonado/:telefono", updateAbonado);
 
 // GET telefonos cercanos
 router.get("/abonado/cercanos/:telefono", getCercanos)
-
+router.get("/abonado/cercanos/:telefono/:latitud/:longitud", getCercanos)
+router.get("/abonado/cercanos/:telefono/:maxDistancia", getCercanos)
+router.get("/abonado/cercanos/:telefono/:latitud/:longitud/:maxDistancia", getCercanos)
 export default router;
