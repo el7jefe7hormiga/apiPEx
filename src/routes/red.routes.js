@@ -13,15 +13,15 @@ const router = Router();
 router.get("/redes", getRedes);
 
 // GET una Red
-router.get("/red/:telefono", getRed);
+router.get("/red/:id", getRed);
 
 // DELETE An Red
-router.delete("/red/:telefono", deleteRed);
+router.delete("/red/:id", deleteRed);
 
 // INSERT An Red
 router.post("/red", createRed);
 
 // UPDATE AN Red
-router.patch("/red/:telefono", updateRed);
+router.patch("/red/:id", updateRed);
 
 export default router;

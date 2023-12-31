@@ -58,10 +58,10 @@ export const deleteRed = async (req, res) => {
 
 export const createRed = async (req, res) => {
   try {
-    const { tipo, dato, direccion, gps, imagen } = req.body;
+    const { tipo, dato, direccion, gps, descripcion } = req.body;
     const [rows] = await pool.query(
-      "INSERT INTO red (tipo, dato, direccion, gps, imagen) VALUES (?, ?, ?, ?, ?)", [tipo, dato, direccion, gps, imagen]);
-    //res.status(201).json({ tipo, dato, direccion, gps, imagen });
+      "INSERT INTO red (tipo, dato, direccion, gps, descripcion) VALUES (?, ?, ?, ?, ?)", [tipo, dato, direccion, gps, descripcion]);
+    //res.status(201).json({ tipo, dato, direccion, gps, descripcion });
     res.status(201).json(rows)
   } catch (error) {
     return res.status(500).json({ error: error, message: "Algo salió mal :(" });
@@ -71,10 +71,10 @@ export const createRed = async (req, res) => {
 export const updateRed = async (req, res) => {
   try {
     const { id } = req.params;
-    const { tipo, dato, direccion, gps, imagen } = req.body;
+    const { tipo, dato, direccion, gps, descripcion } = req.body;
     const [result] = await pool.query(
-      "UPDATE red SET tipo = IFNULL(?, tipo), dato = IFNULL(?, dato), direccion = IFNULL(?, direccion), gps = IFNULL(?, gps), imagen = IFNULL(?, imagen) WHERE id = ?",
-      [tipo, dato, direccion, gps, imagen, id]
+      "UPDATE red SET tipo = IFNULL(?, tipo), dato = IFNULL(?, dato), direccion = IFNULL(?, direccion), gps = IFNULL(?, gps), descripcion = IFNULL(?, descripcion) WHERE id = ?",
+      [tipo, dato, direccion, gps, descripcion, id]
     );
 
     console.log(result);
